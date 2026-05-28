@@ -1,6 +1,6 @@
 {
   "name": "mobile-vertical-reader",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "description": "Obsidian plugin for reading Markdown notes in a mobile-friendly vertical writing view.",
   "main": "main.js",
   "scripts": {

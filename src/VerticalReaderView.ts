@@ -88,8 +88,9 @@ export class VerticalReaderView extends ItemView {
   }
 
   private buildShell(): void {
-    const container = this.containerEl.children[1] ?? this.containerEl;
+    const container = this.contentEl;
     container.empty();
+    container.addClass("vreader-view-content");
 
     this.rootEl = container.createDiv({
       cls: "vreader-root",
@@ -373,8 +374,9 @@ export class VerticalReaderView extends ItemView {
 
   private showFatalShellError(error: unknown): void {
     const message = error instanceof Error ? error.message : String(error);
-    this.containerEl.empty();
-    this.containerEl.createDiv({
+    this.contentEl.empty();
+    this.contentEl.addClass("vreader-view-content");
+    this.contentEl.createDiv({
       cls: "vreader-root vreader-error-root",
       text: `Could not open Vertical Reader: ${message}`,
     });

@@ -1,3 +1,11 @@
+.workspace-leaf-content[data-type="mobile-vertical-reader-view"] .view-content,
+.vreader-view-content {
+  width: 100%;
+  height: 100%;
+  padding: 0;
+  overflow: hidden;
+}
+
 .vreader-root {
   --vreader-font-family: var(--font-text);
   --vreader-font-size: 18px;
@@ -25,6 +33,7 @@
   position: relative;
   width: 100%;
   height: 100%;
+  min-height: 100%;
   overflow: hidden;
   background: var(--vreader-background-color);
   color: var(--vreader-text-color);
