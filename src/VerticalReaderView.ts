@@ -72,7 +72,9 @@ export class VerticalReaderView extends ItemView {
 
     try {
       this.buildShell();
+      new Notice(`Vertical Reader shell mounted ${this.plugin.manifest.version}`);
     } catch (error) {
+      new Notice(`Vertical Reader shell failed: ${formatError(error)}`);
       this.showFatalShellError(error);
       return;
     }
@@ -91,7 +93,7 @@ export class VerticalReaderView extends ItemView {
   }
 
   private buildShell(): void {
-    const container = this.contentEl;
+    const container = this.getMountEl();
     container.empty();
     container.addClass("vreader-view-content");
     container.setAttr("data-vreader-mounted", this.plugin.manifest.version);
@@ -106,10 +108,11 @@ export class VerticalReaderView extends ItemView {
 
     this.applyCssVariables();
 
-    this.rootEl.createDiv({
+    const diagnostic = this.rootEl.createDiv({
       cls: "vreader-diagnostic-banner",
       text: `Mobile Vertical Reader ${this.plugin.manifest.version}`,
     });
+    this.applyDiagnosticInlineStyle(diagnostic);
 
     const topbar = this.rootEl.createDiv({ cls: "vreader-topbar" });
     const backButton = topbar.createEl("button", {
@@ -372,7 +375,7 @@ export class VerticalReaderView extends ItemView {
       return;
     }
 
-    const message = error instanceof Error ? error.message : String(error);
+    const message = formatError(error);
     this.titleEl.setText("Vertical Reader error");
     this.contentElRef.empty();
     this.contentElRef.createDiv({
@@ -383,10 +386,11 @@ export class VerticalReaderView extends ItemView {
   }
 
   private showFatalShellError(error: unknown): void {
-    const message = error instanceof Error ? error.message : String(error);
-    this.contentEl.empty();
-    this.contentEl.addClass("vreader-view-content");
-    this.contentEl.createDiv({
+    const message = formatError(error);
+    const container = this.getMountEl();
+    container.empty();
+    container.addClass("vreader-view-content");
+    container.createDiv({
       cls: "vreader-root vreader-error-root",
       text: `Could not open Vertical Reader: ${message}`,
     });
@@ -401,4 +405,32 @@ export class VerticalReaderView extends ItemView {
     const file = this.app.vault.getAbstractFileByPath(this.filePath);
     return file instanceof TFile && file.extension === "md" ? file : null;
   }
+
+  private getMountEl(): HTMLElement {
+    this.containerEl.empty();
+    this.containerEl.addClass("vreader-container");
+
+    const mount = this.containerEl.createDiv({ cls: "vreader-view-content" });
+    this.contentEl = mount;
+    return mount;
+  }
+
+  private applyDiagnosticInlineStyle(el: HTMLElement): void {
+    el.style.position = "fixed";
+    el.style.top = "48px";
+    el.style.left = "8px";
+    el.style.zIndex = "999999";
+    el.style.padding = "6px 8px";
+    el.style.borderRadius = "4px";
+    el.style.background = "#7c3aed";
+    el.style.color = "#ffffff";
+    el.style.fontSize = "12px";
+    el.style.lineHeight = "1.2";
+    el.style.writingMode = "horizontal-tb";
+    el.style.pointerEvents = "none";
+  }
+}
+
+function formatError(error: unknown): string {
+  return error instanceof Error ? error.message : String(error);
 }
