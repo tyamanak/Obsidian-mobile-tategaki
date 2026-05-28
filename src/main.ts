@@ -6,6 +6,8 @@ import { VerticalReaderView, VIEW_TYPE_VERTICAL_READER } from "./VerticalReaderV
 import { DEFAULT_SETTINGS, type VerticalReaderSettings } from "./settings";
 
 export default class MobileVerticalReaderPlugin extends Plugin {
+  static readonly VERSION = "0.1.3";
+
   settings: VerticalReaderSettings = DEFAULT_SETTINGS;
   readonly annotations = new AnnotationStore();
   readonly selection = new SelectionController();
@@ -60,9 +62,15 @@ export default class MobileVerticalReaderPlugin extends Plugin {
 
   async openFile(file: TFile): Promise<void> {
     const path = normalizePath(file.path);
+    new Notice(`Opening Vertical Reader ${MobileVerticalReaderPlugin.VERSION}: ${file.basename}`);
+
     const existing = this.findExistingLeaf(path);
     if (existing) {
-      this.app.workspace.setActiveLeaf(existing, { focus: true });
+      await this.app.workspace.revealLeaf(existing);
+      const view = existing.view;
+      if (view instanceof VerticalReaderView) {
+        await view.refresh();
+      }
       return;
     }
 
@@ -72,7 +80,12 @@ export default class MobileVerticalReaderPlugin extends Plugin {
       state: { filePath: path },
       active: true,
     });
-    this.app.workspace.setActiveLeaf(leaf, { focus: true });
+    await this.app.workspace.revealLeaf(leaf);
+
+    const view = leaf.view;
+    if (view instanceof VerticalReaderView) {
+      await view.refresh();
+    }
   }
 
   async loadSettings(): Promise<void> {

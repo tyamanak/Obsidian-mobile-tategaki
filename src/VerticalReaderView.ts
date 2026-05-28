@@ -53,6 +53,7 @@ export class VerticalReaderView extends ItemView {
   async setState(state: Record<string, unknown>, result: ViewStateResult): Promise<void> {
     await super.setState(state, result);
     this.filePath = typeof state.filePath === "string" ? normalizePath(state.filePath) : null;
+    new Notice(`Vertical Reader state: ${this.filePath ?? "no file"}`);
 
     if (this.rootEl) {
       await this.render();
@@ -67,6 +68,8 @@ export class VerticalReaderView extends ItemView {
   }
 
   async onOpen(): Promise<void> {
+    new Notice(`Vertical Reader view opened ${this.plugin.manifest.version}`);
+
     try {
       this.buildShell();
     } catch (error) {
@@ -91,6 +94,7 @@ export class VerticalReaderView extends ItemView {
     const container = this.contentEl;
     container.empty();
     container.addClass("vreader-view-content");
+    container.setAttr("data-vreader-mounted", this.plugin.manifest.version);
 
     this.rootEl = container.createDiv({
       cls: "vreader-root",
@@ -101,6 +105,11 @@ export class VerticalReaderView extends ItemView {
     });
 
     this.applyCssVariables();
+
+    this.rootEl.createDiv({
+      cls: "vreader-diagnostic-banner",
+      text: `Mobile Vertical Reader ${this.plugin.manifest.version}`,
+    });
 
     const topbar = this.rootEl.createDiv({ cls: "vreader-topbar" });
     const backButton = topbar.createEl("button", {
@@ -188,6 +197,7 @@ export class VerticalReaderView extends ItemView {
         return;
       }
 
+      new Notice(`Vertical Reader rendering: ${file.basename}`);
       const raw = await this.app.vault.cachedRead(file);
       const parsed = splitFrontmatter(raw);
       const markdown = preprocessMarkdown(

@@ -40,6 +40,21 @@
   font-family: var(--vreader-font-family);
 }
 
+.vreader-diagnostic-banner {
+  position: absolute;
+  top: max(8px, env(safe-area-inset-top));
+  left: 8px;
+  z-index: 40;
+  padding: 4px 6px;
+  border-radius: 4px;
+  background: var(--interactive-accent);
+  color: var(--text-on-accent);
+  font-size: 11px;
+  line-height: 1.2;
+  writing-mode: horizontal-tb;
+  pointer-events: none;
+}
+
 .vreader-root[data-theme="warm-book"] {
   --vreader-background-color: #f6efe2;
   --vreader-page-color: #f6efe2;

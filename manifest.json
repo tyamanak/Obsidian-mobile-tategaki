@@ -1,7 +1,7 @@
 {
   "id": "mobile-vertical-reader",
   "name": "Mobile Vertical Reader",
-  "version": "0.1.2",
+  "version": "0.1.3",
   "minAppVersion": "1.5.0",
   "description": "Read Markdown notes in a mobile-friendly vertical writing view.",
   "author": "tyamanak",
