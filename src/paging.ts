@@ -25,11 +25,19 @@ export class PagingController {
   }
 
   restore(progress: number): void {
-    window.requestAnimationFrame(() => {
+    this.restoreNow(progress);
+    window.requestAnimationFrame(() => this.restoreNow(progress));
+    window.setTimeout(() => this.restoreNow(progress), 80);
+  }
+
+  private restoreNow(progress: number): void {
+    if (!this.scroller.isConnected) {
+      return;
+    }
+
       const max = this.maxScroll();
       this.scroller.scrollLeft = this.progressToScrollLeft(progress, max);
       this.reportProgress();
-    });
   }
 
   currentProgress(): number {

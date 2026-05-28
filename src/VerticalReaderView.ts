@@ -67,7 +67,13 @@ export class VerticalReaderView extends ItemView {
   }
 
   async onOpen(): Promise<void> {
-    this.buildShell();
+    try {
+      this.buildShell();
+    } catch (error) {
+      this.showFatalShellError(error);
+      return;
+    }
+
     this.registerVaultEvents();
     await this.render();
   }
@@ -82,7 +88,7 @@ export class VerticalReaderView extends ItemView {
   }
 
   private buildShell(): void {
-    const container = this.containerEl.children[1];
+    const container = this.containerEl.children[1] ?? this.containerEl;
     container.empty();
 
     this.rootEl = container.createDiv({
@@ -165,41 +171,50 @@ export class VerticalReaderView extends ItemView {
       return;
     }
 
-    this.applyCssVariables();
-    await this.injectCustomCss();
+    try {
+      this.applyCssVariables();
+      await this.injectCustomCss();
 
-    const file = this.getFile();
-    this.contentElRef.empty();
+      const file = this.getFile();
+      this.contentElRef.empty();
 
-    if (!file) {
-      this.titleEl.setText("No Markdown file");
-      this.contentElRef.createDiv({
-        cls: "vreader-empty",
-        text: "Open a Markdown note, then run the vertical reader command again.",
-      });
-      return;
+      if (!file) {
+        this.titleEl.setText("No Markdown file");
+        this.contentElRef.createDiv({
+          cls: "vreader-empty",
+          text: "Open a Markdown note, then run the vertical reader command again.",
+        });
+        return;
+      }
+
+      const raw = await this.app.vault.cachedRead(file);
+      const parsed = splitFrontmatter(raw);
+      const markdown = preprocessMarkdown(
+        this.plugin.settings.content.hideFrontmatter ? parsed.body : raw,
+        {
+          renderAozoraRuby: this.plugin.settings.content.renderAozoraRuby,
+          renderExplicitTcy: this.plugin.settings.content.renderExplicitTcy,
+        },
+      );
+      const title = parsed.data.title || file.basename;
+
+      this.titleEl.setText(title);
+      this.renderMeta(parsed.data);
+      await MarkdownRenderer.render(this.app, markdown, this.contentElRef, file.path, this);
+
+      if (!this.contentElRef.textContent?.trim() && markdown.trim()) {
+        this.renderPlainTextFallback(markdown);
+      }
+
+      this.postprocessRenderedHtml();
+
+      const progress = this.plugin.settings.reading.restoreProgress
+        ? this.plugin.settings.progressByFile[file.path] ?? 0
+        : 0;
+      this.paging?.restore(progress);
+    } catch (error) {
+      this.showRenderError(error);
     }
-
-    const raw = await this.app.vault.cachedRead(file);
-    const parsed = splitFrontmatter(raw);
-    const markdown = preprocessMarkdown(
-      this.plugin.settings.content.hideFrontmatter ? parsed.body : raw,
-      {
-        renderAozoraRuby: this.plugin.settings.content.renderAozoraRuby,
-        renderExplicitTcy: this.plugin.settings.content.renderExplicitTcy,
-      },
-    );
-    const title = parsed.data.title || file.basename;
-
-    this.titleEl.setText(title);
-    this.renderMeta(parsed.data);
-    await MarkdownRenderer.render(this.app, markdown, this.contentElRef, file.path, this);
-    this.postprocessRenderedHtml();
-
-    const progress = this.plugin.settings.reading.restoreProgress
-      ? this.plugin.settings.progressByFile[file.path] ?? 0
-      : 0;
-    this.paging?.restore(progress);
   }
 
   private renderMeta(frontmatter: Record<string, string>): void {
@@ -325,6 +340,45 @@ export class VerticalReaderView extends ItemView {
       attr: { "data-vreader-user-theme": "true" },
       text: css,
     });
+  }
+
+  private renderPlainTextFallback(markdown: string): void {
+    if (!this.contentElRef) {
+      return;
+    }
+
+    this.contentElRef.empty();
+    for (const paragraph of markdown.split(/\n{2,}/)) {
+      const text = paragraph.trim();
+      if (text) {
+        this.contentElRef.createEl("p", { text });
+      }
+    }
+  }
+
+  private showRenderError(error: unknown): void {
+    if (!this.contentElRef || !this.titleEl) {
+      return;
+    }
+
+    const message = error instanceof Error ? error.message : String(error);
+    this.titleEl.setText("Vertical Reader error");
+    this.contentElRef.empty();
+    this.contentElRef.createDiv({
+      cls: "vreader-error",
+      text: `Could not render this note: ${message}`,
+    });
+    console.error("Mobile Vertical Reader render failed", error);
+  }
+
+  private showFatalShellError(error: unknown): void {
+    const message = error instanceof Error ? error.message : String(error);
+    this.containerEl.empty();
+    this.containerEl.createDiv({
+      cls: "vreader-root vreader-error-root",
+      text: `Could not open Vertical Reader: ${message}`,
+    });
+    console.error("Mobile Vertical Reader failed to open", error);
   }
 
   private getFile(): TFile | null {
